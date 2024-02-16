@@ -1,11 +1,16 @@
-apt update && apt install -y git default-jdk python3 python3-pip wget curl tar
+#! /usr/bin/bash
+
+sudo apt update && sudo apt install -y git default-jdk python3 python3-pip wget curl tar parallel
+
+cd $HOME
+
 mkdir -p duality/tools
 
 pushd duality/tools
 
 # Install Maven
 wget -O - https://dlcdn.apache.org/maven/maven-3/3.9.6/binaries/apache-maven-3.9.6-bin.tar.gz | tar xzf -
-export PATH=$PWD/apache-maven-3.9.6/bin:$PATH
+sudo ln -s $PWD/apache-maven-3.9.6/bin/* /usr/bin
 
 # Install NVM
 wget -qO- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.7/install.sh | bash
@@ -24,5 +29,4 @@ git clone https://github.com/rongpan/RFixer.git
 pushd RFixer
 
 mvn install
-export LD_LIBRARY_PATH=$PWD:$LD_LIBRARY_PATH
-ln -s $PWD/*z3* /usr/lib/
+sudo ln -s $PWD/*z3* /usr/lib/
