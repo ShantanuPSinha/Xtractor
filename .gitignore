@@ -1,2 +1,3 @@
 test-suites/test*
 temp
+**/__pycache__/
