@@ -1,0 +1,85 @@
+#!/bin/bash
+
+# Set up logging
+LOG_FILE="processing_log.log"
+
+if [ -f "$LOG_FILE" ]; then
+    rm "$LOG_FILE"
+fi
+
+log() {
+    local msg="$1"
+    echo "$(date +'%Y-%m-%d %H:%M:%S') - $msg" >> "$LOG_FILE"
+}
+
+# Directories for the test suites and the processed output
+TEST_SUITE_DIR="$PWD/test-suites"
+OUT_DIR="$PWD/temp/processed"
+parsed_file="./temp/parser_output.ndjson"
+split_inputs_file="./temp/.split_inputs.ndjson"
+RFixer_OUTDIR="temp/rfixer_output"
+
+# Create the output directory if it doesn't exist
+mkdir -p "$OUT_DIR"
+
+# Initialize continue_processing flag
+continue_processing=true
+
+# Check if parsed file exists and has more than 100 lines
+if [ -f "$parsed_file" ]; then
+    line_count=$(wc -l < "$parsed_file")
+
+    if [ "$line_count" -gt 1000 ]; then
+        log "Skipping processing and concatenation steps; $parsed_file exists with more than 100 lines."
+        continue_processing=false
+    else
+        log "$parsed_file exists but does not have more than 100 lines. Re-processing..."
+    fi
+else
+    log "$parsed_file does not exist. Starting processing..."
+fi
+
+# Error handling function
+handle_error() {
+    local error_msg="$1"
+    log "Error: $error_msg"
+    echo "Error: $error_msg" >&2
+    exit 1
+}
+
+# Process files and concatenate them
+process_files() {
+    # Processing in parallel with adjusted concurrency level
+    parallel --bar --delay 0.2 -j 16 "python3 ./scripts/test-suite-parser.py {} $OUT_DIR/{/}_processed.ndjson" ::: "$TEST_SUITE_DIR"/*
+
+    # Concatenate processed files
+    > "$parsed_file"
+    cat "$OUT_DIR"/*_processed.ndjson >> "$parsed_file"
+
+    # Sorting
+    log "Concatenation complete. Sorting...."
+    python3 ./scripts/test-suite-parser.py "$parsed_file" "$parsed_file" "--sort-only"
+}
+
+# Main processing
+if [ "$continue_processing" = true ]; then
+    process_files || handle_error "Failed to process files or concatenate them."
+fi
+
+# Check if split inputs file exists, if not, create it
+if [ ! -f "$split_inputs_file" ] || [ ! -s "$split_inputs_file" ]; then
+    # Check if Node.js is available on the path
+    if ! type node > /dev/null; then
+        handle_error "Node.js not found on Path."
+    fi
+    
+    # Run split_inputs.js to create split inputs file
+    node scripts/split_inputs.js "$parsed_file" "$split_inputs_file" || handle_error "Failed to split inputs."
+else
+    log "Skipping processing step: $split_inputs_file exists."
+fi
+
+# Analyze regex patterns
+python3 scripts/analyse_regex.py "$split_inputs_file" "$RFixer_OUTDIR" || handle_error "Failed to analyze regex patterns."
+
+log "Processing completed successfully."
