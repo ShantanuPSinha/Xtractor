@@ -1,4 +1,4 @@
-import json
+import json, sys
 
 def load_ndjson_as_dict(file_path):
     data_dict = {}
@@ -7,8 +7,8 @@ def load_ndjson_as_dict(file_path):
             for line in file:
                 try:
                     json_obj = json.loads(line)
-                    key = list(json_obj.keys())[0]
-                    data_dict[key] = json_obj[key]
+                    data_dict[json_obj["file_id"]] = json_obj["solution"]
+
                 except json.JSONDecodeError:
                     print(f"Warning: Could not parse line as JSON: {line}")
                 except KeyError:
@@ -21,7 +21,9 @@ def load_ndjson_as_dict(file_path):
     return data_dict
 
 
-sols = load_ndjson_as_dict ("/home/shantanu/duality/Tests/test-suite-extractor/.temp_sols.ndjson")
+print (f"File Name: {sys.argv[1]}")
+
+sols = load_ndjson_as_dict (sys.argv[1])
 keys = list(sols.keys())
 
 

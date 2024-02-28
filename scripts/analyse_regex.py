@@ -134,7 +134,7 @@ filtered_positive_inputs, filtered_negative_inputs, filtered_data = filter_entri
 print (f'Total Packages {len (filtered_data)}')
 
 generate_RFixer_input(filtered_data, OUTDIR)
-solutions = run_rfixer(OUTDIR, True, timeout=20)
+solutions = run_rfixer(OUTDIR, True, timeout=60)
 
 for id, solution in solutions.items():
     data [int(id)]['RFixer-Solution'] = solution
