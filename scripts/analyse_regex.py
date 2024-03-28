@@ -1,54 +1,6 @@
-import json, sys, time, os
-import matplotlib.pyplot as plt
-import numpy as np
-from run_rfixer import run_rfixer, generate_RFixer_input
+import json, sys
+from rfixer_utils import run_rfixer, generate_RFixer_input
 
-def generate_percentile_plots(positive_inputs, negative_inputs):
-    percentiles = np.arange(5, 101, 5)
-
-    def plot_percentiles(ax, inputs, color, title):
-        lengths = [length for _, length in inputs]
-        percentile_values = np.percentile(lengths, percentiles)
-        ax.set_title(title)
-        ax.set_xlabel('Percentile')
-        ax.set_ylabel('Input Length')
-        ax.plot(percentiles, percentile_values, marker='o', linestyle='-', color=color)
-        ax.set_yscale('log')
-
-        # Add gridlines
-        major_ticks = np.arange(0, 101, 10)
-        minor_ticks = np.arange(0, 101, 5)
-        ax.set_xticks(major_ticks)
-        ax.set_xticks(minor_ticks, minor=True)
-        ax.grid(which='major', alpha=0.5)
-        ax.grid(which='minor', axis='x', alpha=0.2)
-
-        for i, value in enumerate(percentile_values):
-            ax.annotate(f"{value:.0f}", (percentiles[i], value), textcoords="offset points", xytext=(0,10), ha='center')
-
-    _, axs = plt.subplots(1, 2, figsize=(12, 6))
-    plot_percentiles(axs[0], positive_inputs, 'blue', 'Positive Input Lengths')
-    plot_percentiles(axs[1], negative_inputs, 'red', 'Negative Input Lengths')
-    plt.tight_layout()
-
-    filename = 'percentile_plots.png'
-    counter = 1
-
-    while os.path.exists(filename):
-        filename = f'percentile_plots_{counter}.png'
-        counter += 1
-
-    plt.savefig(filename)
-    print(f"Saved percentile plots to {filename}")
-
-def time_it(func):
-    def wrapper(*args, **kwargs):
-        start_time = time.time()
-        result = func(*args, **kwargs)
-        end_time = time.time()
-        print(f"{func.__name__} took {end_time - start_time:.4f} seconds")
-        return result
-    return wrapper
 
 
 def dump_to_ndjson(data, file_name="temp/.temp_sols.ndjson"):
